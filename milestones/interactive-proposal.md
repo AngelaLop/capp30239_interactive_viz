@@ -8,8 +8,8 @@ Build an interactive “life cycle activity explorer” that lets users scrub th
 
 - **Chosen option:** Hybrid of Option A (large interactive centerpiece) and Option C (geospatial visualization). Both the map and the age-by-age activity animation act as primary views, tightly coupled through shared controls.
 - **Stack:**
-  - MapLibre GL JS for the basemap, administrative boundaries, choropleth fills, and smooth zoom/pan.
-  - D3.js for data joins, color scaling, the responsive age slider, the municipal activity breakdown chart, and the animation.
+  - D3.js for the choropleth map (administrative boundaries), data joins, color scaling, the responsive age slider, the municipal activity breakdown chart, and the animation. Using D3 for the map simplifies the stack since it handles choropleths well and we only need province/municipality outlines (not roads or points of interest).
+  - HTML/CSS/JavaScript with a simple local development server
 
 - **Key interactions:** An age slider (3–70) re-styles the map, updates the municipal activity chart, and re-parameterizes the age-specific activity simulation. Hover and click expose municipal details, lock selections, and sync the complementary chart. Playback controls (play/pause, age-step) let users watch how the national distribution shifts as the selected age advances.
 - **Inspiration:**
@@ -48,6 +48,14 @@ URL: https://data.humdata.org/dataset/cod-ab-pan
 Size: 1 GeoPackage with country / province / district layers (81 districts, 6+ attributes)
 
 This Common Operational Dataset maintained by OCHA/Roma Boundary project offers cleaned administrative boundaries aligned with INEC definitions. I will use it to build the map layers and align census tabulations to the correct district codes.
+
+## Implementation Phasing
+
+Given the ambitious scope, I'll prioritize one centerpiece first:
+- **Phase 1 (Core):** Start with the geospatial view (map + municipal activity chart) as the primary focus, as it directly addresses the spatial inequality narrative
+- **Phase 2 (If time permits):** Add the age-by-age activity animation (FlowingData-inspired simulation) as the secondary view
+
+
 
 ## Questions
 

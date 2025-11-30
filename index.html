@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panama Life Cycle Activity Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>Panama Life Cycle Activity Explorer</h1>
+                <p class="subtitle">Exploring how participation in key activities varies across Panama's territories</p>
+            </div>
+            <div class="header-right">
+                <div class="controls-box">
+                    <div class="age-display">
+                        <span id="age-value-large">3</span>
+                        <span class="age-label">Age</span>
+                    </div>
+                    <div class="age-controls-compact">
+                        <div class="slider-container-compact">
+                            <input type="range" id="age-slider" min="3" max="70" value="3">
+                            <button id="play-pause-btn" class="play-button-compact" title="Play/Pause">
+                                <span id="play-icon">▶</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="sex-filter-buttons">
+                        <button class="sex-btn active" data-sex="all">All</button>
+                        <button class="sex-btn" data-sex="Hombre">Male</button>
+                        <button class="sex-btn" data-sex="Mujer">Female</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="map-section-container">
+            <div class="description-panel">
+                <h2>What is the main activity of the population in Panama according to their age?</h2>
+                <p>This interactive visualization explores how participation in key life cycle activities varies across Panama's territories. <strong>Use the age slider to see how activity patterns change across different ages</strong>, and filter by sex to compare gender differences.</p>
+                <p>The map shows the dominant activity for each municipality or province, color-coded by activity type. <strong>Click on any territory to see detailed activity breakdowns in the charts below.</strong></p>
+                
+                <h3 style="margin-top: 25px; margin-bottom: 15px; font-size: 1.1em; color: #2c3e50;">Activity Definitions</h3>
+                <div class="activity-definitions">
+                    <p><span class="activity-label" style="background-color: #FDCA81; color: #2c3e50; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Students</span>: Population who reported attending an educational institution at the time of the census.</p>
+                    <p><span class="activity-label" style="background-color: #FFA552; color: #2c3e50; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Working Students</span>: Population who reported both studying and working at the time of the interview.</p>
+                    <p><span class="activity-label" style="background-color: #BA5624; color: white; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Workers (Low income)</span>: Employed population who reported monthly earnings below the median.</p>
+                    <p><span class="activity-label" style="background-color: #381D2A; color: white; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Workers (High income)</span>: Employed population who reported median or higher monthly earnings.</p>
+                    <p><span class="activity-label" style="background-color: #295249; color: white; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Unemployed</span>: Population who reported actively searching for a job at the time of the interview.</p>
+                    <p><span class="activity-label" style="background-color: #C4D6B0; color: #2c3e50; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Inactive</span>: Population not employed, not actively looking for work, and not studying or in training.</p>
+                    <p><span class="activity-label" style="background-color: #DAE7E9; color: #2c3e50; padding: 2px 6px; border-radius: 3px; font-weight: 600;">Retired</span>: Population who are retired with pension access.</p>
+                </div>
+            </div>
+            
+            <div class="map-panel">
+                <div class="tabs">
+                    <button class="tab-button active" id="tab-total" data-view="total">Total</button>
+                    <button class="tab-button" id="tab-province" data-view="province">By Province</button>
+                </div>
+                
+                <div id="maps-wrapper">
+                    <div id="map-container-single" class="map-view active">
+                        <svg id="map-total"></svg>
+                        <div id="tooltip-total" class="tooltip"></div>
+                        <div class="zoom-controls">
+                            <button class="zoom-button" id="zoom-in-total" title="Zoom In">+</button>
+                            <button class="zoom-button" id="zoom-out-total" title="Zoom Out">−</button>
+                            <button class="zoom-button" id="zoom-reset-total" title="Reset Zoom">⌂</button>
+                        </div>
+                        <div id="legend-total" class="legend">
+                            <h4>Dominant Activity</h4>
+                            <div class="legend-items"></div>
+                        </div>
+                        <div class="map-source">Source: 2023 Panama Population Census - INEC</div>
+                    </div>
+                    
+                    <div id="map-container-province" class="map-view">
+                        <div class="province-controls">
+                            <label for="province-select">Select Province:</label>
+                            <select id="province-select">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <svg id="map-province"></svg>
+                        <div id="tooltip-province" class="tooltip"></div>
+                        <div class="zoom-controls">
+                            <button class="zoom-button" id="zoom-in-province" title="Zoom In">+</button>
+                            <button class="zoom-button" id="zoom-out-province" title="Zoom Out">−</button>
+                            <button class="zoom-button" id="zoom-reset-province" title="Reset Zoom">⌂</button>
+                        </div>
+                        <div id="legend-province" class="legend">
+                            <h4>Dominant Activity</h4>
+                            <div class="legend-items"></div>
+                        </div>
+                        <div class="map-source">Source: 2023 Panama Population Census - INEC</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="charts-container">
+            <div id="national-chart-container">
+                <h3>National Activity Distribution</h3>
+                <div id="national-activity-chart"></div>
+                <p class="instruction">Activity counts for the selected age across all of Panama</p>
+            </div>
+            
+            <div id="municipal-chart-container">
+                <h3>Municipality Activity Breakdown</h3>
+                <div id="activity-chart"></div>
+                <p class="instruction">Click on a municipality to see details</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="map.js"></script>
+</body>
+</html>
+

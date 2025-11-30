@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Data files (large datasets)
+data/*.dta
+data/*.csv
+data/aggregated_by_age_sex_quintile.json
+data/aggregated_by_age_sex_quintile.csv
+
+# Keep processed/compact data files
+!data/ages_*.json
+!data/aggregated_compact.json
+
+# Shapefile components (keep GeoJSON, ignore raw shapefiles)
+geo/*.dbf
+geo/*.prj
+geo/*.shp
+geo/*.shx
+
+# Keep processed GeoJSON files
+!geo/*.geojson
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
