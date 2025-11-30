@@ -11,15 +11,6 @@ def fix_encoding(text):
     if pd.isna(text) or text == 'nan' or not isinstance(text, str):
         return text
     
-    # Replace accented characters with non-accented equivalents
-    replacements = {
-        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
-        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
-        'ñ': 'n', 'Ñ': 'N',
-        'ä': 'a', 'Ä': 'A',
-        'ü': 'u', 'Ü': 'U',
-    }
-    
     # First, try to fix mojibake if present
     if 'Ã' in text or '' in text:
         try:
@@ -35,15 +26,17 @@ def fix_encoding(text):
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
     
-    # Replace any remaining accented characters or replacement characters
-    result = text
-    for accented, unaccented in replacements.items():
-        result = result.replace(accented, unaccented)
+    # Comprehensive replacement of accented characters with non-accented equivalents
+    import unicodedata
+    result = ''.join(
+        c for c in unicodedata.normalize('NFD', text)
+        if unicodedata.category(c) != 'Mn'  # Remove combining marks (accents)
+    )
     
     # Remove replacement characters
     result = result.replace('', '')
     
-    # Manual fixes for specific cases
+    # Manual fixes for specific corrupted cases
     if result == 'Cocl' or (result.startswith('Cocl') and len(result) <= 6):
         result = 'Cocle'
     if result == 'Panam' or (result.startswith('Panam') and 'Oeste' not in result and len(result) <= 7):
@@ -56,6 +49,11 @@ def fix_encoding(text):
         result = 'Darien'
     if 'Panam' in result and 'Oeste' in result:
         result = result.replace('Panam', 'Panama')
+    # Fix duplicate 'a' issue
+    if 'Panamaaa' in result:
+        result = result.replace('Panamaaa', 'Panama')
+    if 'Panamaa' in result:
+        result = result.replace('Panamaa', 'Panama')
     
     return result
 
