@@ -29,7 +29,7 @@ This project builds an interactive "life cycle activity explorer" that lets user
 
 ## Acknowledgments
 
-This project was developed with assistance from AI coding tools (Cursor AI) for implementation guidance, debugging, and code optimization.
+This project was developed with assistance from AI coding tools for implementation guidance, debugging, and code optimization.
 
 ### Learning Resources
 
