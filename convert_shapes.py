@@ -36,24 +36,57 @@ def fix_encoding(text):
     """Fix mojibake: UTF-8 text that was incorrectly decoded as latin-1"""
     if pd.isna(text) or text == 'nan' or not isinstance(text, str):
         return text
-    # Check if text contains mojibake patterns (like Ã©, Ã³, etc.)
-    # If it does, try to fix it
-    if 'Ã' in text or any(ord(c) > 127 for c in text if ord(c) < 256):
+    
+    # Manual fixes for known encoding issues in Panama geographic names
+    # Map common corrupted patterns to correct names
+    manual_fixes = {
+        'Cocl': 'Coclé',
+        'Panam': 'Panamá',
+        'Coln': 'Colón',
+        'Chiriqu': 'Chiriquí',
+        'Darin': 'Darién',
+        'Panam Oeste': 'Panamá Oeste',
+        'Comarca Ember-Wounan': 'Comarca Emberá-Wounaan',
+        'Comarca Ngbe-Bugl': 'Comarca Ngäbe-Buglé',
+    }
+    
+    # Check for exact matches first
+    if text in manual_fixes:
+        return manual_fixes[text]
+    
+    # Check for corrupted patterns (text ending with replacement char or missing accented chars)
+    # Fix common cases where accented characters are missing
+    if text == 'Cocl' or (text.startswith('Cocl') and len(text) <= 5):
+        return 'Coclé'
+    if text == 'Panam' or (text.startswith('Panam') and 'Oeste' not in text and len(text) <= 7):
+        return 'Panamá'
+    if text == 'Coln' or (text.startswith('Coln') and len(text) <= 5):
+        return 'Colón'
+    if text == 'Chiriqu' or (text.startswith('Chiriqu') and len(text) <= 9):
+        return 'Chiriquí'
+    if text == 'Darin' or (text.startswith('Darin') and len(text) <= 7):
+        return 'Darién'
+    if 'Panam' in text and 'Oeste' in text and 'á' not in text:
+        return 'Panamá Oeste'
+    
+    # Check if text contains mojibake patterns (like Ã©, Ã³, etc.) or replacement characters
+    if 'Ã' in text or '' in text:
         try:
             # Fix mojibake: encode back to latin-1 bytes, then decode as utf-8
             fixed = text.encode('latin-1').decode('utf-8')
             # Verify the fix worked (should not contain mojibake patterns)
-            if 'Ã' not in fixed:
+            if 'Ã' not in fixed and '' not in fixed:
                 return fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
         try:
             # Try cp1252 as alternative
             fixed = text.encode('cp1252').decode('utf-8')
-            if 'Ã' not in fixed:
+            if 'Ã' not in fixed and '' not in fixed:
                 return fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
+    
     # If no mojibake detected or fix failed, return original
     return text
 

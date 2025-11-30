@@ -10,23 +10,37 @@ def fix_encoding(text):
     """Fix mojibake: UTF-8 text that was incorrectly decoded as latin-1"""
     if pd.isna(text) or text == 'nan' or not isinstance(text, str):
         return text
-    # Check if text contains mojibake patterns (like Ã©, Ã³, etc.)
-    if 'Ã' in text or any(ord(c) > 127 for c in text if ord(c) < 256):
+    # Check if text contains mojibake patterns (like Ã©, Ã³, etc.) or replacement characters
+    if 'Ã' in text or '' in text or any(ord(c) > 127 for c in text if ord(c) < 256):
         try:
             # Fix mojibake: encode back to latin-1 bytes, then decode as utf-8
             fixed = text.encode('latin-1').decode('utf-8')
-            # Verify the fix worked (should not contain mojibake patterns)
-            if 'Ã' not in fixed:
+            # Verify the fix worked (should not contain mojibake patterns or replacement chars)
+            if 'Ã' not in fixed and '' not in fixed:
                 return fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
         try:
             # Try cp1252 as alternative
             fixed = text.encode('cp1252').decode('utf-8')
-            if 'Ã' not in fixed:
+            if 'Ã' not in fixed and '' not in fixed:
                 return fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
+        # If we have replacement characters, try to read from original shapefile
+        # For now, manually fix common cases
+        replacements = {
+            'Cocl': 'Coclé',
+            'Panam': 'Panamá',
+            'Coln': 'Colón',
+            'Chiriqu': 'Chiriquí',
+            'Darin': 'Darién',
+            'Panam Oeste': 'Panamá Oeste',
+            'Comarca Ember-Wounan': 'Comarca Emberá-Wounaan',
+            'Comarca Ngbe-Bugl': 'Comarca Ngäbe-Buglé'
+        }
+        if text in replacements:
+            return replacements[text]
     # If no mojibake detected or fix failed, return original
     return text
 
