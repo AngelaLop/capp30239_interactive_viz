@@ -42,32 +42,62 @@ def fix_encoding(text):
     if pd.isna(text) or text == 'nan' or not isinstance(text, str):
         return text
     
-    # First, try to fix mojibake if present
-    if 'Ã' in text or '' in text:
+    # Step 1: Handle corrupted bytes from shapefile FIRST
+    # The shapefile has corrupted characters like \xad (soft hyphen) and replacement chars
+    original_text = text
+    text = text.replace('\xad', '')  # Remove soft hyphens
+    text = text.replace('', '')      # Remove replacement characters
+    
+    # Step 2: Known corrupted patterns from shapefile - fix these BEFORE other processing
+    # These are exact matches for corrupted data we've seen
+    corrupted_fixes = {
+        'Chiriqu': 'Chiriqui',
+        'Chiriqu\xad': 'Chiriqui',
+        'Cocl': 'Cocle',
+        'Panam': 'Panama',
+        'Coln': 'Colon',
+        'Darin': 'Darien',
+    }
+    
+    # Check for exact matches
+    if text in corrupted_fixes:
+        return corrupted_fixes[text]
+    
+    # Check for partial matches (text starts with corrupted pattern)
+    for corrupted, correct in corrupted_fixes.items():
+        clean_corrupted = corrupted.replace('\xad', '')
+        if text.startswith(clean_corrupted) and len(text) <= len(clean_corrupted) + 3:
+            return correct
+    
+    # Step 3: Try to fix mojibake if present (UTF-8 text incorrectly decoded)
+    if 'Ã' in text:
         try:
             fixed = text.encode('latin-1').decode('utf-8')
-            if 'Ã' not in fixed and '' not in fixed:
+            if 'Ã' not in fixed:
                 text = fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
         try:
             fixed = text.encode('cp1252').decode('utf-8')
-            if 'Ã' not in fixed and '' not in fixed:
+            if 'Ã' not in fixed:
                 text = fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
     
-    # Comprehensive replacement of accented characters with non-accented equivalents
+    # Step 4: Remove accented characters using Unicode normalization
     import unicodedata
     result = ''.join(
         c for c in unicodedata.normalize('NFD', text)
         if unicodedata.category(c) != 'Mn'  # Remove combining marks (accents)
     )
     
-    # Remove replacement characters
+    # Step 5: Clean up any remaining problematic characters
     result = result.replace('', '')
+    result = result.replace('\xad', '')
+    # Remove other control characters that might cause issues
+    result = ''.join(c for c in result if ord(c) >= 32 or c in '\n\r\t')
     
-    # Manual fixes for specific corrupted cases
+    # Step 6: Final manual fixes for specific cases
     if result == 'Cocl' or (result.startswith('Cocl') and len(result) <= 6):
         result = 'Cocle'
     if result == 'Panam' or (result.startswith('Panam') and 'Oeste' not in result and len(result) <= 7):
@@ -80,7 +110,6 @@ def fix_encoding(text):
         result = 'Darien'
     if 'Panam' in result and 'Oeste' in result:
         result = result.replace('Panam', 'Panama')
-    # Fix duplicate 'a' issue - handle Panamaaaá, Panamaaa, Panamaa
     if 'Panamaaa' in result:
         result = result.replace('Panamaaa', 'Panama')
     if 'Panamaa' in result and 'Panamaaa' not in result:
@@ -93,20 +122,12 @@ for col in text_cols:
     if prov_gdf[col].dtype == 'object':
         prov_gdf[col] = prov_gdf[col].apply(fix_encoding)
 
-# Additional fix: Replace any remaining replacement characters with correct names
-# This handles cases where the shapefile itself has encoding issues
-province_name_fixes = {
-    'Cocl': 'Coclé',
-    'Panam': 'Panamá',
-    'Chiriqu': 'Chiriquí',
-    'Panam Oeste': 'Panamá Oeste',
-}
+# Additional post-processing: Ensure all province names are clean
+# This catches any edge cases the fix_encoding function might have missed
 if 'nomb_prov' in prov_gdf.columns:
-    for wrong, correct in province_name_fixes.items():
-        prov_gdf.loc[prov_gdf['nomb_prov'].str.contains(wrong, na=False) & 
-                     ~prov_gdf['nomb_prov'].str.contains('á|é|í|ó|ú', na=False), 'nomb_prov'] = prov_gdf.loc[
-            prov_gdf['nomb_prov'].str.contains(wrong, na=False) & 
-            ~prov_gdf['nomb_prov'].str.contains('á|é|í|ó|ú', na=False), 'nomb_prov'].str.replace(wrong, correct, regex=False)
+    # Remove any remaining problematic characters
+    prov_gdf['nomb_prov'] = prov_gdf['nomb_prov'].str.replace('\xad', '', regex=False)
+    prov_gdf['nomb_prov'] = prov_gdf['nomb_prov'].str.replace('', '', regex=False)
 
 prov_gdf.to_file("geo/panama_provinces.geojson", driver="GeoJSON", encoding='utf-8')
 print(f"Created geo/panama_provinces.geojson ({len(prov_gdf)} provinces)")
