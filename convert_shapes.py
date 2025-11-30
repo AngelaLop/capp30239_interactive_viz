@@ -80,9 +80,11 @@ def fix_encoding(text):
         result = 'Darien'
     if 'Panam' in result and 'Oeste' in result:
         result = result.replace('Panam', 'Panama')
-    # Fix duplicate 'a' issue
+    # Fix duplicate 'a' issue - handle Panamaaaá, Panamaaa, Panamaa
     if 'Panamaaa' in result:
         result = result.replace('Panamaaa', 'Panama')
+    if 'Panamaa' in result and 'Panamaaa' not in result:
+        result = result.replace('Panamaa', 'Panama')
     
     return result
 
