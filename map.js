@@ -58,22 +58,48 @@ function loadData() {
         "data/ages_61_70.json"
     ];
     
+    console.log("Loading data files...");
+    
     Promise.all([
-        d3.json("geo/panama_municipalities.geojson"),
-        d3.json("geo/panama_provinces.geojson"),
-        ...dataFiles.map(f => d3.json(f).catch(() => []))
+        d3.json("geo/panama_municipalities.geojson").catch(err => {
+            console.error("Failed to load panama_municipalities.geojson:", err);
+            throw new Error("Failed to load municipalities GeoJSON file. This may be a Git LFS issue.");
+        }),
+        d3.json("geo/panama_provinces.geojson").catch(err => {
+            console.error("Failed to load panama_provinces.geojson:", err);
+            throw new Error("Failed to load provinces GeoJSON file. This may be a Git LFS issue.");
+        }),
+        ...dataFiles.map(f => d3.json(f).catch(err => {
+            console.warn(`Failed to load ${f}:`, err);
+            return [];
+        }))
     ])
     .then(([municipalities, provinces, ...ageData]) => {
+        console.log("GeoJSON files loaded successfully");
+        console.log("Municipalities:", municipalities?.features?.length || 0);
+        console.log("Provinces:", provinces?.features?.length || 0);
+        
+        if (!municipalities || !municipalities.features) {
+            throw new Error("Municipalities GeoJSON is invalid or empty");
+        }
+        if (!provinces || !provinces.features) {
+            throw new Error("Provinces GeoJSON is invalid or empty");
+        }
+        
         municipalitiesData = municipalities;
         provincesData = provinces;
         aggregatedData = ageData.flat().filter(d => d);
         
+        console.log("Age data files loaded:", aggregatedData.length, "records");
+        
         if (aggregatedData.length === 0) {
+            console.log("No age data found, trying fallback files...");
             return Promise.all([
                 d3.json("data/aggregated_compact.json").catch(() => []),
                 d3.json("data/aggregated_by_age_sex_quintile.json").catch(() => [])
             ]).then(([compact, full]) => {
                 aggregatedData = compact.length > 0 ? compact : full;
+                console.log("Fallback data loaded:", aggregatedData.length, "records");
             });
         }
     })
@@ -86,7 +112,8 @@ function loadData() {
     })
     .catch(error => {
         console.error("Error loading data:", error);
-        showError("Failed to load data files");
+        console.error("Error details:", error.message, error.stack);
+        showError(`Failed to load data files: ${error.message}. Check browser console for details.`);
     });
 }
 
