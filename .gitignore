@@ -26,9 +26,6 @@ env/
 ENV/
 .venv
 
-# Jupyter Notebook
-.ipynb_checkpoints/
-*.ipynb_checkpoints
 
 # Data files (large datasets)
 data/*.dta
@@ -46,8 +43,8 @@ geo/*.prj
 geo/*.shp
 geo/*.shx
 
-# Keep processed GeoJSON files
-!geo/*.geojson
+# Large GeoJSON files (handled by Git LFS)
+# Keep processed GeoJSON files - they will be tracked via Git LFS
 
 # OS files
 .DS_Store
@@ -77,4 +74,5 @@ desktop.ini
 *.temp
 *.bak
 *.backup
+ .github/workflows/deploy.yml
 
