@@ -7,42 +7,57 @@ import json
 import pandas as pd
 
 def fix_encoding(text):
-    """Fix mojibake: UTF-8 text that was incorrectly decoded as latin-1"""
+    """Fix encoding issues by replacing accented characters with non-accented equivalents"""
     if pd.isna(text) or text == 'nan' or not isinstance(text, str):
         return text
-    # Check if text contains mojibake patterns (like Ã©, Ã³, etc.) or replacement characters
-    if 'Ã' in text or '' in text or any(ord(c) > 127 for c in text if ord(c) < 256):
+    
+    # Replace accented characters with non-accented equivalents
+    replacements = {
+        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
+        'ñ': 'n', 'Ñ': 'N',
+        'ä': 'a', 'Ä': 'A',
+        'ü': 'u', 'Ü': 'U',
+    }
+    
+    # First, try to fix mojibake if present
+    if 'Ã' in text or '' in text:
         try:
-            # Fix mojibake: encode back to latin-1 bytes, then decode as utf-8
             fixed = text.encode('latin-1').decode('utf-8')
-            # Verify the fix worked (should not contain mojibake patterns or replacement chars)
             if 'Ã' not in fixed and '' not in fixed:
-                return fixed
+                text = fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
         try:
-            # Try cp1252 as alternative
             fixed = text.encode('cp1252').decode('utf-8')
             if 'Ã' not in fixed and '' not in fixed:
-                return fixed
+                text = fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
-        # If we have replacement characters, try to read from original shapefile
-        # For now, manually fix common cases
-        replacements = {
-            'Cocl': 'Coclé',
-            'Panam': 'Panamá',
-            'Coln': 'Colón',
-            'Chiriqu': 'Chiriquí',
-            'Darin': 'Darién',
-            'Panam Oeste': 'Panamá Oeste',
-            'Comarca Ember-Wounan': 'Comarca Emberá-Wounaan',
-            'Comarca Ngbe-Bugl': 'Comarca Ngäbe-Buglé'
-        }
-        if text in replacements:
-            return replacements[text]
-    # If no mojibake detected or fix failed, return original
-    return text
+    
+    # Replace any remaining accented characters or replacement characters
+    result = text
+    for accented, unaccented in replacements.items():
+        result = result.replace(accented, unaccented)
+    
+    # Remove replacement characters
+    result = result.replace('', '')
+    
+    # Manual fixes for specific cases
+    if result == 'Cocl' or (result.startswith('Cocl') and len(result) <= 6):
+        result = 'Cocle'
+    if result == 'Panam' or (result.startswith('Panam') and 'Oeste' not in result and len(result) <= 7):
+        result = 'Panama'
+    if result == 'Coln' or (result.startswith('Coln') and len(result) <= 5):
+        result = 'Colon'
+    if result == 'Chiriqu' or (result.startswith('Chiriqu') and len(result) <= 9):
+        result = 'Chiriqui'
+    if result == 'Darin' or (result.startswith('Darin') and len(result) <= 7):
+        result = 'Darien'
+    if 'Panam' in result and 'Oeste' in result:
+        result = result.replace('Panam', 'Panama')
+    
+    return result
 
 def optimize_geojson(input_file, output_file, simplify_tolerance=0.0001, precision=6):
     """

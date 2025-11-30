@@ -14,10 +14,15 @@ def read_shapefile_with_encoding(filepath):
             gdf = gpd.read_file(filepath, encoding=enc)
             # Check if we got reasonable text (not all mojibake)
             text_cols = gdf.select_dtypes(include=['object']).columns
-            sample_text = ' '.join([str(gdf[col].iloc[0]) for col in text_cols[:3] if gdf[col].dtype == 'object'])
-            if 'Ã' not in sample_text or enc == 'utf-8':
-                print(f"  Successfully read with encoding: {enc}")
-                return gdf
+            if len(text_cols) > 0:
+                sample_text = ' '.join([str(gdf[col].iloc[0]) for col in text_cols[:3] if gdf[col].dtype == 'object'])
+                # Check for common Panama names to verify encoding
+                if 'Panamá' in sample_text or 'Coclé' in sample_text or 'Colón' in sample_text:
+                    print(f"  Successfully read with encoding: {enc}")
+                    return gdf
+                elif 'Ã' not in sample_text and '' not in sample_text:
+                    print(f"  Successfully read with encoding: {enc}")
+                    return gdf
         except Exception as e:
             continue
     # Fallback to default
@@ -33,67 +38,79 @@ print(f"  Converted to: {prov_gdf.crs}")
 
 # Fix encoding in text columns - fix mojibake (UTF-8 text that was read as latin-1)
 def fix_encoding(text):
-    """Fix mojibake: UTF-8 text that was incorrectly decoded as latin-1"""
+    """Fix encoding issues by replacing accented characters with non-accented equivalents"""
     if pd.isna(text) or text == 'nan' or not isinstance(text, str):
         return text
     
-    # Manual fixes for known encoding issues in Panama geographic names
-    # Map common corrupted patterns to correct names
-    manual_fixes = {
-        'Cocl': 'Coclé',
-        'Panam': 'Panamá',
-        'Coln': 'Colón',
-        'Chiriqu': 'Chiriquí',
-        'Darin': 'Darién',
-        'Panam Oeste': 'Panamá Oeste',
-        'Comarca Ember-Wounan': 'Comarca Emberá-Wounaan',
-        'Comarca Ngbe-Bugl': 'Comarca Ngäbe-Buglé',
+    # Replace accented characters with non-accented equivalents
+    replacements = {
+        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
+        'ñ': 'n', 'Ñ': 'N',
+        'ä': 'a', 'Ä': 'A',
+        'ü': 'u', 'Ü': 'U',
     }
     
-    # Check for exact matches first
-    if text in manual_fixes:
-        return manual_fixes[text]
-    
-    # Check for corrupted patterns (text ending with replacement char or missing accented chars)
-    # Fix common cases where accented characters are missing
-    if text == 'Cocl' or (text.startswith('Cocl') and len(text) <= 5):
-        return 'Coclé'
-    if text == 'Panam' or (text.startswith('Panam') and 'Oeste' not in text and len(text) <= 7):
-        return 'Panamá'
-    if text == 'Coln' or (text.startswith('Coln') and len(text) <= 5):
-        return 'Colón'
-    if text == 'Chiriqu' or (text.startswith('Chiriqu') and len(text) <= 9):
-        return 'Chiriquí'
-    if text == 'Darin' or (text.startswith('Darin') and len(text) <= 7):
-        return 'Darién'
-    if 'Panam' in text and 'Oeste' in text and 'á' not in text:
-        return 'Panamá Oeste'
-    
-    # Check if text contains mojibake patterns (like Ã©, Ã³, etc.) or replacement characters
+    # First, try to fix mojibake if present
     if 'Ã' in text or '' in text:
         try:
             # Fix mojibake: encode back to latin-1 bytes, then decode as utf-8
             fixed = text.encode('latin-1').decode('utf-8')
-            # Verify the fix worked (should not contain mojibake patterns)
             if 'Ã' not in fixed and '' not in fixed:
-                return fixed
+                text = fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
         try:
             # Try cp1252 as alternative
             fixed = text.encode('cp1252').decode('utf-8')
             if 'Ã' not in fixed and '' not in fixed:
-                return fixed
+                text = fixed
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
     
-    # If no mojibake detected or fix failed, return original
-    return text
+    # Replace any remaining accented characters or replacement characters
+    result = text
+    for accented, unaccented in replacements.items():
+        result = result.replace(accented, unaccented)
+    
+    # Remove replacement characters
+    result = result.replace('', '')
+    
+    # Manual fixes for specific cases
+    if result == 'Cocl' or result.startswith('Cocl') and len(result) <= 6:
+        result = 'Cocle'
+    if result == 'Panam' or (result.startswith('Panam') and 'Oeste' not in result and len(result) <= 7):
+        result = 'Panama'
+    if result == 'Coln' or (result.startswith('Coln') and len(result) <= 5):
+        result = 'Colon'
+    if result == 'Chiriqu' or (result.startswith('Chiriqu') and len(result) <= 9):
+        result = 'Chiriqui'
+    if result == 'Darin' or (result.startswith('Darin') and len(result) <= 7):
+        result = 'Darien'
+    if 'Panam' in result and 'Oeste' in result:
+        result = result.replace('Panam', 'Panama')
+    
+    return result
 
 text_cols = prov_gdf.select_dtypes(include=['object']).columns
 for col in text_cols:
     if prov_gdf[col].dtype == 'object':
         prov_gdf[col] = prov_gdf[col].apply(fix_encoding)
+
+# Additional fix: Replace any remaining replacement characters with correct names
+# This handles cases where the shapefile itself has encoding issues
+province_name_fixes = {
+    'Cocl': 'Coclé',
+    'Panam': 'Panamá',
+    'Chiriqu': 'Chiriquí',
+    'Panam Oeste': 'Panamá Oeste',
+}
+if 'nomb_prov' in prov_gdf.columns:
+    for wrong, correct in province_name_fixes.items():
+        prov_gdf.loc[prov_gdf['nomb_prov'].str.contains(wrong, na=False) & 
+                     ~prov_gdf['nomb_prov'].str.contains('á|é|í|ó|ú', na=False), 'nomb_prov'] = prov_gdf.loc[
+            prov_gdf['nomb_prov'].str.contains(wrong, na=False) & 
+            ~prov_gdf['nomb_prov'].str.contains('á|é|í|ó|ú', na=False), 'nomb_prov'].str.replace(wrong, correct, regex=False)
 
 prov_gdf.to_file("geo/panama_provinces.geojson", driver="GeoJSON", encoding='utf-8')
 print(f"Created geo/panama_provinces.geojson ({len(prov_gdf)} provinces)")
