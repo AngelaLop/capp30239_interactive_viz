@@ -425,8 +425,9 @@ function updateMap(mapId, sex) {
         }
     });
     
-    map.group.selectAll("path").each(function(d) {
-        const cod = String((d.properties?.cod_corr) || '');
+    map.group.selectAll("path.municipality").each(function(d) {
+        if (!d || !d.properties) return; // Safety check to skip marker or other non-municipality paths
+        const cod = String((d.properties.cod_corr) || '');
         d3.select(this).attr("fill", colorMap.get(cod) || activityColors.no_data);
     });
     
