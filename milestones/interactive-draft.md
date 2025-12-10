@@ -25,7 +25,7 @@ When the page loads, users see a choropleth map of Panama showing all municipali
 **Exploring by Age:**
 1. **Manual Exploration:** Users can drag the age slider (3-70) in the header to see how activity patterns change across the life course. As they move the slider, the map updates in real-time, showing which activity dominates each municipality at that age. The large age number in the header updates to reflect the current selection.
 
-2. **Auto-Play:** Users can click the play button (▶) next to the slider to automatically advance through ages every 0.5 seconds. This creates an animated view of how Panama's activity landscape evolves from childhood through retirement. The play button toggles to pause (⏸) when active, and users can stop it at any time.
+2. **Auto-Play:** Users can click the play button next to the slider to automatically advance through ages every 0.5 seconds. This creates an animated view of how Panama's activity landscape evolves from childhood through retirement. The play button toggles to pause when active, and users can stop it at any time.
 
 **Filtering by Sex:**
 Users can click the sex filter buttons (All, Male, Female) to compare gender differences. When "Male" or "Female" is selected, the map updates to show activity patterns for that specific group, revealing spatial inequalities in opportunities across Panama's territories.

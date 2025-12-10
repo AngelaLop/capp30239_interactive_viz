@@ -2,6 +2,8 @@
 
 Interactive visualization exploring how participation in key life cycle activities (education, employment, unemployment, inactivity, retirement) varies across Panama's territories by age and gender.
 
+![Screenshot](images/Screenshot.png)
+
 **Live Demo:** https://angelalop.github.io/capp30239_interactive_viz/
 
 ## Description
@@ -14,6 +16,7 @@ This project builds an interactive "life cycle activity explorer" that lets user
 - Two view modes: Total (all municipalities) and By Province (filtered view)
 - Detailed activity breakdown charts for selected territories
 - Hover tooltips with complete activity percentages
+
 
 ## Technical Stack
 

@@ -426,6 +426,32 @@ header h1 {
     gap: 20px;
 }
 
+.sources-text {
+    margin: 30px 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #667eea;
+    border-radius: 4px;
+    color: #888;
+}
+
+.sources-text h4,
+.sources-text p,
+.sources-text strong {
+    color: #888;
+}
+
+.sources-text h4 {
+    margin: 0 0 15px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.sources-text p {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
 .zoom-controls {
     position: absolute;
     top: 30px;
